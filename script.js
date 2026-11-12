@@ -107,22 +107,16 @@
     const y = $('#year'); if (y) y.textContent = new Date().getFullYear();
   })();
 
-  /* ---------- Blokada scrolla ---------- */
-  let lockCount = 0, savedY = 0;
+  /* ---------- Blokada scrolla ----------
+     Tylko overflow:hidden na <html> i <body> — bez position:fixed, więc strona
+     nie „skacze” po otwarciu menu/okna (zachowuje pozycję przewinięcia). */
+  let lockCount = 0;
   function lockScroll() {
-    if (lockCount++ > 0) return;
-    savedY = window.scrollY;
-    document.body.style.top = `-${savedY}px`;
-    document.documentElement.classList.add('is-locked');
+    if (lockCount++ === 0) document.documentElement.classList.add('is-locked');
   }
   function unlockScroll() {
     if (lockCount === 0 || --lockCount > 0) return;
-    const root = document.documentElement;
-    root.classList.remove('is-locked');
-    document.body.style.top = '';
-    root.style.scrollBehavior = 'auto';
-    window.scrollTo(0, savedY);
-    root.style.scrollBehavior = '';
+    document.documentElement.classList.remove('is-locked');
   }
 
   /* ---------- Overlay: menu / modal / lightbox ---------- */
@@ -215,12 +209,13 @@
     const cta = $('#stickyCta');
     const hero = $('#top');
     const formSection = $('#rezerwacja');
+    const footer = $('.footer');
     if (!cta || !hero || !('IntersectionObserver' in window)) return;
     const btn = $('button', cta);
-    let heroGone = false, formVisible = false;
+    let heroGone = false, formVisible = false, footerVisible = false;
 
     const update = () => {
-      const show = mqMobile.matches && heroGone && !formVisible;
+      const show = mqMobile.matches && heroGone && !formVisible && !footerVisible;
       cta.classList.toggle('is-visible', show);
       cta.setAttribute('aria-hidden', String(!show));
       btn.tabIndex = show ? 0 : -1;
@@ -230,6 +225,7 @@
       update();
     }, { threshold: 0 }).observe(hero);
     new IntersectionObserver(([e]) => { formVisible = e.isIntersecting; update(); }, { threshold: 0 }).observe(formSection);
+    if (footer) new IntersectionObserver(([e]) => { footerVisible = e.isIntersecting; update(); }, { threshold: 0 }).observe(footer);
     mqMobile.addEventListener('change', update);
   })();
 
